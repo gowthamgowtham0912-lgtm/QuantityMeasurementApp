@@ -5,52 +5,52 @@ public class QuantityMeasurement {
 
     // Constructor
     public QuantityMeasurement(double value, LengthUnit unit) {
-        if (unit == null) {
-            throw new IllegalArgumentException("Unit cannot be null");
-        }
-        if (!Double.isFinite(value)) {
-            throw new IllegalArgumentException("Invalid number");
-        }
+        if (unit == null) throw new IllegalArgumentException("Unit cannot be null");
+        if (!Double.isFinite(value)) throw new IllegalArgumentException("Invalid value");
+
         this.value = value;
         this.unit = unit;
     }
 
-    // UC5: Convert
-    public static double convert(double value, LengthUnit source, LengthUnit target) {
-        if (source == null || target == null) {
-            throw new IllegalArgumentException("Unit cannot be null");
-        }
-        if (!Double.isFinite(value)) {
-            throw new IllegalArgumentException("Invalid number");
-        }
-
-        double base = value * source.getFactor(); // to feet
-        return base / target.getFactor();
-    }
-
-    // UC6: Add (result in first operand unit)
-    public QuantityMeasurement add(QuantityMeasurement other) {
-        return add(other, this.unit);
+    // Convert using enum responsibility
+    public QuantityMeasurement convertTo(LengthUnit targetUnit) {
+        double base = unit.toBase(value);
+        double result = targetUnit.fromBase(base);
+        return new QuantityMeasurement(result, targetUnit);
     }
 
     // UC7: Add with target unit
     public QuantityMeasurement add(QuantityMeasurement other, LengthUnit targetUnit) {
-
         if (other == null || targetUnit == null) {
             throw new IllegalArgumentException("Invalid input");
         }
 
-        // Convert both to base unit (feet)
-        double base1 = this.value * this.unit.getFactor();
-        double base2 = other.value * other.unit.getFactor();
+        double base1 = this.unit.toBase(this.value);
+        double base2 = other.unit.toBase(other.value);
 
-        // Add
-        double sumBase = base1 + base2;
+        double sum = base1 + base2;
 
-        // Convert to target unit
-        double result = sumBase / targetUnit.getFactor();
+        double result = targetUnit.fromBase(sum);
 
         return new QuantityMeasurement(result, targetUnit);
+    }
+
+    // UC6: Add (default first unit)
+    public QuantityMeasurement add(QuantityMeasurement other) {
+        return add(other, this.unit);
+    }
+
+    // Equality check
+    @Override
+    public boolean equals(Object obj) {
+        if (!(obj instanceof QuantityMeasurement)) return false;
+
+        QuantityMeasurement other = (QuantityMeasurement) obj;
+
+        double base1 = this.unit.toBase(this.value);
+        double base2 = other.unit.toBase(other.value);
+
+        return Math.abs(base1 - base2) < 1e-6;
     }
 
     @Override
@@ -64,21 +64,24 @@ public class QuantityMeasurement {
         QuantityMeasurement q1 = new QuantityMeasurement(1.0, LengthUnit.FEET);
         QuantityMeasurement q2 = new QuantityMeasurement(12.0, LengthUnit.INCHES);
 
-        // UC7 Examples
-        System.out.println(q1.add(q2, LengthUnit.FEET));    // 2 FEET
-        System.out.println(q1.add(q2, LengthUnit.INCHES));  // 24 INCHES
-        System.out.println(q1.add(q2, LengthUnit.YARDS));   // ~0.667 YARDS
+        // Conversion
+        System.out.println(q1.convertTo(LengthUnit.INCHES));
 
-        System.out.println(new QuantityMeasurement(1, LengthUnit.YARDS)
-                .add(new QuantityMeasurement(3, LengthUnit.FEET), LengthUnit.YARDS));
+        // Addition
+        System.out.println(q1.add(q2, LengthUnit.FEET));
+        System.out.println(q1.add(q2, LengthUnit.YARDS));
 
-        System.out.println(new QuantityMeasurement(36, LengthUnit.INCHES)
-                .add(new QuantityMeasurement(1, LengthUnit.YARDS), LengthUnit.FEET));
+        // Equality
+        System.out.println(
+                new QuantityMeasurement(36, LengthUnit.INCHES)
+                        .equals(new QuantityMeasurement(1, LengthUnit.YARDS))
+        );
     }
 }
 
-// Enum
+// Standalone-style enum (but kept in same file)
 enum LengthUnit {
+
     FEET(1.0),
     INCHES(1.0 / 12),
     YARDS(3.0),
@@ -90,7 +93,13 @@ enum LengthUnit {
         this.factor = factor;
     }
 
-    public double getFactor() {
-        return factor;
+    // Convert to base unit (feet)
+    public double toBase(double value) {
+        return value * factor;
+    }
+
+    // Convert from base unit (feet)
+    public double fromBase(double baseValue) {
+        return baseValue / factor;
     }
 }
