@@ -1,34 +1,77 @@
 public class QuantityMeasurement {
 
-    // Convert method
-    public static double convert(double value, LengthUnit source, LengthUnit target) {
+    private final double value;
+    private final LengthUnit unit;
 
+    // Constructor
+    public QuantityMeasurement(double value, LengthUnit unit) {
+        if (unit == null) {
+            throw new IllegalArgumentException("Unit cannot be null");
+        }
+        if (!Double.isFinite(value)) {
+            throw new IllegalArgumentException("Invalid number");
+        }
+        this.value = value;
+        this.unit = unit;
+    }
+
+    // Convert method (UC5)
+    public static double convert(double value, LengthUnit source, LengthUnit target) {
         if (source == null || target == null) {
             throw new IllegalArgumentException("Unit cannot be null");
         }
-
         if (!Double.isFinite(value)) {
             throw new IllegalArgumentException("Invalid number");
         }
 
-        // Convert to base unit (feet)
-        double baseValue = value * source.getFactor();
-
-        // Convert to target unit
+        double baseValue = value * source.getFactor(); // to feet
         return baseValue / target.getFactor();
     }
 
-    // Main method for testing
+    // Add method (UC6)
+    public QuantityMeasurement add(QuantityMeasurement other) {
+        if (other == null) {
+            throw new IllegalArgumentException("Other value cannot be null");
+        }
+
+        // Convert both to base unit (feet)
+        double base1 = this.value * this.unit.getFactor();
+        double base2 = other.value * other.unit.getFactor();
+
+        // Add
+        double sumBase = base1 + base2;
+
+        // Convert back to first object's unit
+        double resultValue = sumBase / this.unit.getFactor();
+
+        return new QuantityMeasurement(resultValue, this.unit);
+    }
+
+    @Override
+    public String toString() {
+        return "Quantity(" + value + ", " + unit + ")";
+    }
+
+    // Main method
     public static void main(String[] args) {
 
-        System.out.println(convert(1.0, LengthUnit.FEET, LengthUnit.INCHES)); // 12
-        System.out.println(convert(3.0, LengthUnit.YARDS, LengthUnit.FEET)); // 9
-        System.out.println(convert(36.0, LengthUnit.INCHES, LengthUnit.YARDS)); // 1
-        System.out.println(convert(2.54, LengthUnit.CENTIMETERS, LengthUnit.INCHES)); // ~1
+        QuantityMeasurement q1 = new QuantityMeasurement(1.0, LengthUnit.FEET);
+        QuantityMeasurement q2 = new QuantityMeasurement(12.0, LengthUnit.INCHES);
+
+        QuantityMeasurement result = q1.add(q2);
+
+        System.out.println(result); // Quantity(2.0, FEET)
+
+        // More examples
+        System.out.println(new QuantityMeasurement(1, LengthUnit.YARDS)
+                .add(new QuantityMeasurement(3, LengthUnit.FEET)));
+
+        System.out.println(new QuantityMeasurement(12, LengthUnit.INCHES)
+                .add(new QuantityMeasurement(1, LengthUnit.FEET)));
     }
 }
 
-// Enum in same file
+// Enum (same file)
 enum LengthUnit {
     FEET(1.0),
     INCHES(1.0 / 12),
