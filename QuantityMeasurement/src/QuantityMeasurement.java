@@ -15,7 +15,7 @@ public class QuantityMeasurement {
         this.unit = unit;
     }
 
-    // Convert method (UC5)
+    // UC5: Convert
     public static double convert(double value, LengthUnit source, LengthUnit target) {
         if (source == null || target == null) {
             throw new IllegalArgumentException("Unit cannot be null");
@@ -24,14 +24,20 @@ public class QuantityMeasurement {
             throw new IllegalArgumentException("Invalid number");
         }
 
-        double baseValue = value * source.getFactor(); // to feet
-        return baseValue / target.getFactor();
+        double base = value * source.getFactor(); // to feet
+        return base / target.getFactor();
     }
 
-    // Add method (UC6)
+    // UC6: Add (result in first operand unit)
     public QuantityMeasurement add(QuantityMeasurement other) {
-        if (other == null) {
-            throw new IllegalArgumentException("Other value cannot be null");
+        return add(other, this.unit);
+    }
+
+    // UC7: Add with target unit
+    public QuantityMeasurement add(QuantityMeasurement other, LengthUnit targetUnit) {
+
+        if (other == null || targetUnit == null) {
+            throw new IllegalArgumentException("Invalid input");
         }
 
         // Convert both to base unit (feet)
@@ -41,10 +47,10 @@ public class QuantityMeasurement {
         // Add
         double sumBase = base1 + base2;
 
-        // Convert back to first object's unit
-        double resultValue = sumBase / this.unit.getFactor();
+        // Convert to target unit
+        double result = sumBase / targetUnit.getFactor();
 
-        return new QuantityMeasurement(resultValue, this.unit);
+        return new QuantityMeasurement(result, targetUnit);
     }
 
     @Override
@@ -58,20 +64,20 @@ public class QuantityMeasurement {
         QuantityMeasurement q1 = new QuantityMeasurement(1.0, LengthUnit.FEET);
         QuantityMeasurement q2 = new QuantityMeasurement(12.0, LengthUnit.INCHES);
 
-        QuantityMeasurement result = q1.add(q2);
+        // UC7 Examples
+        System.out.println(q1.add(q2, LengthUnit.FEET));    // 2 FEET
+        System.out.println(q1.add(q2, LengthUnit.INCHES));  // 24 INCHES
+        System.out.println(q1.add(q2, LengthUnit.YARDS));   // ~0.667 YARDS
 
-        System.out.println(result); // Quantity(2.0, FEET)
-
-        // More examples
         System.out.println(new QuantityMeasurement(1, LengthUnit.YARDS)
-                .add(new QuantityMeasurement(3, LengthUnit.FEET)));
+                .add(new QuantityMeasurement(3, LengthUnit.FEET), LengthUnit.YARDS));
 
-        System.out.println(new QuantityMeasurement(12, LengthUnit.INCHES)
-                .add(new QuantityMeasurement(1, LengthUnit.FEET)));
+        System.out.println(new QuantityMeasurement(36, LengthUnit.INCHES)
+                .add(new QuantityMeasurement(1, LengthUnit.YARDS), LengthUnit.FEET));
     }
 }
 
-// Enum (same file)
+// Enum
 enum LengthUnit {
     FEET(1.0),
     INCHES(1.0 / 12),
